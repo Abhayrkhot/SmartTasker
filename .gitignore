@@ -1,0 +1,19 @@
+# Python / Django
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.sqlite3
+backend/staticfiles/
+
+# Android
+android-app/.gradle/
+android-app/build/
+android-app/app/build/
+android-app/local.properties
+android-app/*.iml
+android-app/.idea/
+
+# OS
+.DS_Store
