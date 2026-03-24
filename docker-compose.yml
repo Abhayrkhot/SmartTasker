@@ -26,11 +26,15 @@ services:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-me-in-production}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,web}
+      # Django reads DB_* first; fall back to POSTGRES_* from .env for a single source of truth
+      DB_NAME: ${DB_NAME:-${POSTGRES_DB:-smarttasker}}
+      DB_USER: ${DB_USER:-${POSTGRES_USER:-smarttasker}}
+      DB_PASSWORD: ${DB_PASSWORD:-${POSTGRES_PASSWORD:-smarttasker}}
+      DB_HOST: db
+      DB_PORT: "5432"
       POSTGRES_DB: ${POSTGRES_DB:-smarttasker}
       POSTGRES_USER: ${POSTGRES_USER:-smarttasker}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smarttasker}
-      POSTGRES_HOST: db
-      POSTGRES_PORT: "5432"
     ports:
       - "${WEB_PORT:-8000}:8000"
     depends_on:

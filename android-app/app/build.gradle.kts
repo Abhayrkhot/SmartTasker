@@ -1,5 +1,17 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
+}
+
+val localProperties = Properties()
+val localPropsFile = rootProject.file("local.properties")
+if (localPropsFile.exists()) {
+    localPropsFile.inputStream().use { localProperties.load(it) }
+}
+var apiBaseUrl = localProperties.getProperty("smarttasker.api.baseUrl", "http://10.0.2.2:8000/api/")
+if (!apiBaseUrl.endsWith("/")) {
+    apiBaseUrl = "$apiBaseUrl/"
 }
 
 android {
@@ -14,8 +26,8 @@ android {
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Emulator: http://10.0.2.2:8000/api/ — physical device: use machine LAN IP
-        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8000/api/\"")
+        // Override in android-app/local.properties: smarttasker.api.baseUrl=http://YOUR_LAN_IP:8000/api/
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
     buildTypes {

@@ -10,7 +10,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "username", "email", "password")
-        extra_kwargs = {"email": {"required": False}}
+        extra_kwargs = {"email": {"required": False, "allow_blank": True}}
 
     def create(self, validated_data):
         user = User.objects.create_user(

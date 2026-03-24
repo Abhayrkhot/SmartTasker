@@ -1,26 +1,67 @@
 # SmartTasker
 
-Cross-device task management: a **Django REST Framework** backend with **JWT** authentication and a **Java** Android client using **MVVM**, **Retrofit**, **LiveData**, and **ViewModel**.
+Production-oriented full-stack task sync: **Android (Java, MVVM)** ↔ **Django REST + JWT** ↔ **PostgreSQL** ↔ **Docker** (AWS EC2–ready).
 
 ## Project overview
 
-- **backend/** — Django project `backend`, app `tasks`; PostgreSQL; JWT via `djangorestframework-simplejwt`.
-- **android-app/** — Android Studio project **SmartTaskerApp** (`com.smarttasker.app`).
-- **docker-compose.yml** — `web` (Gunicorn + Django) and `db` (PostgreSQL), suitable for local runs or **AWS EC2** (install Docker, open security group port, set `DJANGO_ALLOWED_HOSTS` and secrets).
+| Part | Description |
+|------|-------------|
+| **backend/** | Django project `backend`, app **`tasks`**: UUID tasks per user, JWT auth, PostgreSQL. |
+| **android-app/** | **SmartTaskerApp** (`com.smarttasker.app`): Retrofit, ViewModel + LiveData, Material 3, JWT in `SharedPreferences`. |
+| **docker-compose.yml** | **`web`** (Gunicorn + Django) + **`db`** (PostgreSQL), env-driven config. |
+
+### End-to-end flow (verify locally)
+
+1. Start API (Docker or local Postgres + `runserver`).
+2. Android: default **emulator** base URL is `http://10.0.2.2:8000/api/` (see **Android setup** to override).
+3. **Register** → **Login** → **Create task** → list updates → **Edit** / **toggle complete** / **Delete**.
 
 ## Tech stack
 
-| Layer    | Technology |
-|----------|------------|
-| API      | Django 4.2+, Django REST Framework, Simple JWT |
-| Database | PostgreSQL (psycopg2-binary) |
-| Server   | Gunicorn, Docker |
-| Android  | Java 17, MVVM, Retrofit, OkHttp, Material 3, LiveData, ViewModel, RecyclerView |
+| Layer | Technology |
+|-------|------------|
+| API | Django 4.2+, Django REST Framework, **djangorestframework-simplejwt** (access + refresh, rotation + blacklist) |
+| DB | **PostgreSQL** (psycopg2-binary), env: `DB_*` (and legacy `POSTGRES_*`) |
+| Server | Gunicorn, Docker |
+| Android | Java 17, MVVM, Retrofit + Gson, OkHttp, Material 3, RecyclerView, SwipeRefreshLayout |
+
+## Backend configuration
+
+Environment variables are read from **`backend/.env`** (if present) and the **repo root** `.env`. Prefer **PostgreSQL** with:
+
+| Variable | Purpose |
+|----------|---------|
+| `DB_NAME` | Database name (fallback: `POSTGRES_DB`) |
+| `DB_USER` | User (fallback: `POSTGRES_USER`) |
+| `DB_PASSWORD` | Password (fallback: `POSTGRES_PASSWORD`) |
+| `DB_HOST` | Host (fallback: `POSTGRES_HOST`; default `localhost`) |
+| `DB_PORT` | Port (fallback: `POSTGRES_PORT`; default `5432`) |
+| `DJANGO_SECRET_KEY` | Required in production |
+| `DJANGO_DEBUG` | `True` / `False` |
+| `DJANGO_ALLOWED_HOSTS` | Comma-separated hosts |
+| `JWT_ACCESS_MINUTES`, `JWT_REFRESH_DAYS` | Optional |
+
+Copy **`.env.example`** to **`.env`** and adjust.
+
+## Backend setup (Docker — recommended)
+
+Requires Docker Engine.
+
+```bash
+cd SmartTasker
+cp .env.example .env
+# Set DJANGO_SECRET_KEY, passwords, DJANGO_ALLOWED_HOSTS for real deployments
+docker compose up --build
+```
+
+- API base: **`http://localhost:8000/api/`**
+- Migrations run on container start (`migrate` + Gunicorn).
+- Postgres data is stored in the **`postgres_data`** volume.
 
 ## Backend setup (local, without Docker)
 
-1. Install **PostgreSQL** and create a database and user (or match defaults below).
-2. Python 3.11+ recommended:
+1. Install **PostgreSQL** and create a database/user matching your `.env` / exports.
+2. Python **3.11+**:
 
 ```bash
 cd backend
@@ -29,16 +70,16 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. Environment (example):
+3. Export or place in **`.env`** (repo root or `backend/`):
 
 ```bash
 export DJANGO_SECRET_KEY="dev-secret-change-me"
 export DJANGO_DEBUG=True
-export POSTGRES_DB=smarttasker
-export POSTGRES_USER=smarttasker
-export POSTGRES_PASSWORD=smarttasker
-export POSTGRES_HOST=localhost
-export POSTGRES_PORT=5432
+export DB_NAME=smarttasker
+export DB_USER=smarttasker
+export DB_PASSWORD=smarttasker
+export DB_HOST=localhost
+export DB_PORT=5432
 ```
 
 4. Migrate and run:
@@ -48,51 +89,48 @@ python manage.py migrate
 python manage.py runserver 0.0.0.0:8000
 ```
 
-5. Create an optional admin user: `python manage.py createsuperuser` — admin UI at `/admin/`.
-
-Copy **`.env.example`** to **`.env`** at the repo root when using Docker or documenting EC2 variables.
+5. Optional admin: `python manage.py createsuperuser` → `/admin/`.
 
 ## Android setup
 
-1. Install **Android Studio** (bundled **JDK 17**).
+1. Install **Android Studio** with **JDK 17**.
 2. Open **`android-app/`**.
-3. **Base URL**: in `app/build.gradle.kts`, `buildConfigField` sets `API_BASE_URL` (default `http://10.0.2.2:8000/api/` for the emulator). For a **physical device**, use your computer’s LAN IP, e.g. `http://192.168.1.10:8000/api/`, and ensure the device and server share a network.
-4. Sync Gradle and run on an emulator or device.
+3. **API base URL** (BuildConfig `API_BASE_URL`):
+   - **Emulator** (default): `http://10.0.2.2:8000/api/` (already the default if you do not set `local.properties`).
+   - **Physical device**: use your computer’s **LAN IP**, e.g. `http://192.168.1.10:8000/api/`, same Wi‑Fi as the phone.
+4. Create **`android-app/local.properties`** (gitignored) or copy from **`local.properties.example`**:
 
-Cleartext HTTP is allowed for local development via `network_security_config` and `usesCleartextTraffic`. Use **HTTPS** behind a reverse proxy in production.
-
-## Run with Docker
-
-Requires Docker Engine.
-
-```bash
-cd SmartTasker
-cp .env.example .env
-# Edit .env: set DJANGO_SECRET_KEY, POSTGRES_PASSWORD, DJANGO_ALLOWED_HOSTS as needed
-docker compose up --build
+```properties
+smarttasker.api.baseUrl=http://YOUR_IP:8000/api/
 ```
 
-- API: `http://localhost:8000/api/`
-- PostgreSQL is not exposed to the host unless you keep the `db` ports mapping (default `5432`).
+5. Sync Gradle and run the app.
 
-For **EC2**: install Docker, copy the project, set `.env` (including `DJANGO_ALLOWED_HOSTS` to your public DNS or IP), run `docker compose up -d`, and open the app port (e.g. `8000`) in the security group.
+Cleartext HTTP is enabled for development (`usesCleartextTraffic` + `network_security_config`). Use **HTTPS** behind a reverse proxy in production.
 
-## API documentation
+## API reference
 
-Base path: **`/api/`** (trailing slashes as shown).
+Base path: **`/api/`** (include trailing slashes).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `POST` | `/api/register/` | No | Register user. Body: `username`, `password` (min 8), optional `email`. |
-| `POST` | `/api/login/` | No | JWT login. Body: `username`, `password`. Response: `access`, `refresh`. |
+| `POST` | `/api/register/` | No | Register. JSON: `username`, `password` (min 8), optional `email`. |
+| `POST` | `/api/login/` | No | JWT login. JSON: `username`, `password`. Response: **`access`**, **`refresh`**. |
+| `POST` | `/api/token/refresh/` | No | Refresh JSON: `refresh` → new `access` (and rotated `refresh` when rotation enabled). |
 | `GET` | `/api/tasks/` | Bearer | List current user’s tasks. |
-| `POST` | `/api/tasks/` | Bearer | Create task. Body: `title`, `description`, `is_completed`. |
-| `PUT` | `/api/tasks/{id}/` | Bearer | Full update (same fields as create). |
+| `POST` | `/api/tasks/` | Bearer | Create task. JSON: `title`, `description`, `is_completed`. |
+| `PUT` | `/api/tasks/{id}/` | Bearer | Full update (same fields). |
+| `PATCH` | `/api/tasks/{id}/` | Bearer | Partial update. |
 | `DELETE` | `/api/tasks/{id}/` | Bearer | Delete task. |
+| `GET` | `/api/health/` | No | Liveness (`{"status":"ok"}`) for load balancers. |
 
-**Authorization header:** `Authorization: Bearer <access_token>`
+**Authorization:** `Authorization: Bearer <access_token>`
 
-**Example — register**
+**Security:** Task list/detail querysets are scoped to **`request.user`**; unauthenticated users cannot access task endpoints (global `IsAuthenticated` except register/login/refresh/health).
+
+### Example requests
+
+**Register**
 
 ```http
 POST /api/register/
@@ -101,7 +139,7 @@ Content-Type: application/json
 {"username": "alice", "password": "secret12345", "email": ""}
 ```
 
-**Example — login**
+**Login**
 
 ```http
 POST /api/login/
@@ -110,7 +148,7 @@ Content-Type: application/json
 {"username": "alice", "password": "secret12345"}
 ```
 
-**Example — create task**
+**Create task**
 
 ```http
 POST /api/tasks/
@@ -120,31 +158,35 @@ Content-Type: application/json
 {"title": "Buy milk", "description": "", "is_completed": false}
 ```
 
-Optional health check for load balancers: `GET /api/health/`.
+## AWS (EC2) notes
+
+- Install Docker, clone the repo, configure **`.env`** (`DJANGO_ALLOWED_HOSTS`, strong secrets, DB if managed RDS).
+- Open the app port (e.g. **8000**) or place **nginx/ALB** in front with TLS.
+- Set `DEBUG=False`; `SECURE_PROXY_SSL_HEADER` is enabled when `DEBUG` is off for TLS-terminated proxies.
 
 ## Screenshots (placeholders)
 
-Replace these with real screenshots after you run the app:
+Add PNGs under `docs/screenshots/` if you use these paths:
 
-![Login screen](docs/screenshots/login.png)
+![Login](docs/screenshots/login.png)
 
-![Task list](docs/screenshots/tasks.png)
+![Tasks](docs/screenshots/tasks.png)
 
-![Task edit](docs/screenshots/edit.png)
-
-(Add image files under `docs/screenshots/` if you use the paths above.)
+![Edit](docs/screenshots/edit.png)
 
 ## Repository layout
 
 ```
 SmartTasker/
-├── backend/                 # Django project
+├── backend/
 │   ├── Dockerfile
 │   ├── manage.py
 │   ├── requirements.txt
-│   ├── backend/             # settings, urls, wsgi
+│   ├── backend/          # settings, urls, wsgi
 │   └── tasks/               # models, serializers, views, urls, migrations
-├── android-app/             # Android (SmartTaskerApp)
+├── android-app/
+│   ├── local.properties.example
+│   └── app/...
 ├── docker-compose.yml
 ├── .env.example
 └── README.md
@@ -152,4 +194,4 @@ SmartTasker/
 
 ## License
 
-Provided as sample code for SmartTasker; adjust licensing for your product.
+Sample project for SmartTasker; adjust for your product.

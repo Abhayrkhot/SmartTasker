@@ -2,15 +2,29 @@
 Django settings for SmartTasker backend.
 Uses environment variables for secrets (12-factor / AWS EC2 friendly).
 """
+from __future__ import annotations
+
 import os
 from datetime import timedelta
 from pathlib import Path
+from typing import Optional
 
 from dotenv import load_dotenv
 
-load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load .env from backend/ first, then repo root (Docker / local / AWS).
+load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR.parent / ".env")
+
+
+def _env_first(*keys: str, default: Optional[str] = None) -> Optional[str]:
+    """Return the first non-empty environment value for the given keys."""
+    for key in keys:
+        val = os.environ.get(key)
+        if val is not None and str(val).strip() != "":
+            return val
+    return default
 
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
@@ -18,6 +32,10 @@ SECRET_KEY = os.environ.get(
 )
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in ("1", "true", "yes")
+
+# Behind AWS ALB / nginx with TLS termination, trust X-Forwarded-Proto when DEBUG is False.
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 ALLOWED_HOSTS = [
     h.strip()
@@ -34,6 +52,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "tasks",
 ]
 
@@ -67,14 +86,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "backend.wsgi.application"
 
+# PostgreSQL only (production / Docker / local). Use DB_* or legacy POSTGRES_* vars.
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB", "smarttasker"),
-        "USER": os.environ.get("POSTGRES_USER", "smarttasker"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "smarttasker"),
-        "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
-        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+        "NAME": _env_first("DB_NAME", "POSTGRES_DB", default="smarttasker"),
+        "USER": _env_first("DB_USER", "POSTGRES_USER", default="smarttasker"),
+        "PASSWORD": _env_first("DB_PASSWORD", "POSTGRES_PASSWORD", default="smarttasker"),
+        "HOST": _env_first("DB_HOST", "POSTGRES_HOST", default="localhost"),
+        "PORT": _env_first("DB_PORT", "POSTGRES_PORT", default="5432"),
     }
 }
 
@@ -106,5 +126,5 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.environ.get("JWT_ACCESS_MINUTES", "60"))),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.environ.get("JWT_REFRESH_DAYS", "7"))),
     "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": False,
+    "BLACKLIST_AFTER_ROTATION": True,
 }
