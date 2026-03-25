@@ -7,7 +7,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import com.smarttasker.app.data.model.JwtTokens;
+import com.smarttasker.app.data.model.AuthResponse;
 import com.smarttasker.app.data.repo.AuthRepository;
 import com.smarttasker.app.ui.common.AuthUiState;
 
@@ -25,9 +25,9 @@ public class LoginViewModel extends AndroidViewModel {
 
     public void login(String username, String password) {
         loginState.postValue(AuthUiState.loading());
-        authRepository.login(username.trim(), password, new AuthRepository.RepoCallback<JwtTokens>() {
+        authRepository.login(username.trim(), password, new AuthRepository.RepoCallback<AuthResponse>() {
             @Override
-            public void onSuccess(JwtTokens data) {
+            public void onSuccess(AuthResponse data) {
                 loginState.postValue(AuthUiState.success());
             }
 

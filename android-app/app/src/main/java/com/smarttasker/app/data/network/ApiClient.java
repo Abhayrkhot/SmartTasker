@@ -12,7 +12,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * Singleton Retrofit client. Uses {@link BuildConfig#API_BASE_URL} (e.g.
- * {@code http://10.0.2.2:8000/api/} for the emulator pointing at host port 8000).
+ * {@code http://3.144.24.128:8000/api/} for deployed backend usage).
  */
 public final class ApiClient {
     private static volatile ApiClient instance;
@@ -21,7 +21,7 @@ public final class ApiClient {
     private ApiClient(Context appContext) {
         TokenManager tokenManager = new TokenManager(appContext);
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-        logging.setLevel(BuildConfig.DEBUG ? HttpLoggingInterceptor.Level.BASIC : HttpLoggingInterceptor.Level.NONE);
+        logging.setLevel(BuildConfig.DEBUG ? HttpLoggingInterceptor.Level.BODY : HttpLoggingInterceptor.Level.BASIC);
 
         OkHttpClient client = new OkHttpClient.Builder()
                 .addInterceptor(new AuthInterceptor(tokenManager))

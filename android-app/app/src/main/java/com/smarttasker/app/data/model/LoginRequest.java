@@ -1,13 +1,12 @@
 package com.smarttasker.app.data.model;
 
-public class RegisterBody {
+/** Request body for POST /api/login/. */
+public class LoginRequest {
     public String username;
     public String password;
-    public String email;
 
-    public RegisterBody(String username, String password, String email) {
+    public LoginRequest(String username, String password) {
         this.username = username;
         this.password = password;
-        this.email = email;
     }
 }

@@ -3,9 +3,9 @@ package com.smarttasker.app.data.repo;
 import android.content.Context;
 
 import com.smarttasker.app.data.local.TokenManager;
-import com.smarttasker.app.data.model.JwtTokens;
-import com.smarttasker.app.data.model.LoginBody;
-import com.smarttasker.app.data.model.RegisterBody;
+import com.smarttasker.app.data.model.AuthResponse;
+import com.smarttasker.app.data.model.LoginRequest;
+import com.smarttasker.app.data.model.RegisterRequest;
 import com.smarttasker.app.data.model.UserResponse;
 import com.smarttasker.app.data.network.ApiClient;
 
@@ -23,7 +23,7 @@ public final class AuthRepository {
     }
 
     public void register(String username, String password, String email, RepoCallback<UserResponse> cb) {
-        RegisterBody body = new RegisterBody(username, password, email == null ? "" : email);
+        RegisterRequest body = new RegisterRequest(username, email == null ? "" : email, password);
         ApiClient.get(appContext).api().register(body).enqueue(new Callback<UserResponse>() {
             @Override
             public void onResponse(Call<UserResponse> call, Response<UserResponse> response) {
@@ -41,13 +41,13 @@ public final class AuthRepository {
         });
     }
 
-    public void login(String username, String password, RepoCallback<JwtTokens> cb) {
-        LoginBody body = new LoginBody(username, password);
-        ApiClient.get(appContext).api().login(body).enqueue(new Callback<JwtTokens>() {
+    public void login(String username, String password, RepoCallback<AuthResponse> cb) {
+        LoginRequest body = new LoginRequest(username, password);
+        ApiClient.get(appContext).api().login(body).enqueue(new Callback<AuthResponse>() {
             @Override
-            public void onResponse(Call<JwtTokens> call, Response<JwtTokens> response) {
+            public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    JwtTokens tokens = response.body();
+                    AuthResponse tokens = response.body();
                     tokenManager.saveTokens(tokens.access, tokens.refresh);
                     cb.onSuccess(tokens);
                 } else {
@@ -56,7 +56,7 @@ public final class AuthRepository {
             }
 
             @Override
-            public void onFailure(Call<JwtTokens> call, Throwable t) {
+            public void onFailure(Call<AuthResponse> call, Throwable t) {
                 cb.onError(t.getMessage() != null ? t.getMessage() : "Network error");
             }
         });
@@ -71,7 +71,7 @@ public final class AuthRepository {
         return tokenManager.hasAccessToken();
     }
 
-    private static String parseError(retrofit2.Response<?> response) {
+    private static String parseError(Response<?> response) {
         try {
             okhttp3.ResponseBody err = response.errorBody();
             if (err != null) {

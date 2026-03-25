@@ -1,8 +1,8 @@
 package com.smarttasker.app.data.network;
 
-import com.smarttasker.app.data.model.JwtTokens;
-import com.smarttasker.app.data.model.LoginBody;
-import com.smarttasker.app.data.model.RegisterBody;
+import com.smarttasker.app.data.model.AuthResponse;
+import com.smarttasker.app.data.model.LoginRequest;
+import com.smarttasker.app.data.model.RegisterRequest;
 import com.smarttasker.app.data.model.Task;
 import com.smarttasker.app.data.model.TaskRequest;
 import com.smarttasker.app.data.model.UserResponse;
@@ -18,16 +18,16 @@ import retrofit2.http.PUT;
 import retrofit2.http.Path;
 
 /**
- * Retrofit contract for SmartTasker API. Base URL must end with {@code /api/}
- * (e.g. {@code http://10.0.2.2:8000/api/} on the Android emulator).
+ * Retrofit contract for SmartTasker API.
+ * Base URL: http://3.144.24.128:8000/api/
  */
 public interface ApiService {
 
     @POST("register/")
-    Call<UserResponse> register(@Body RegisterBody body);
+    Call<UserResponse> register(@Body RegisterRequest body);
 
     @POST("login/")
-    Call<JwtTokens> login(@Body LoginBody body);
+    Call<AuthResponse> login(@Body LoginRequest body);
 
     @GET("tasks/")
     Call<List<Task>> getTasks();

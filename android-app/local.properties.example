@@ -1,5 +1,4 @@
 # Copy to local.properties (gitignored) and edit for your machine.
 #
-# Emulator (backend on host): 10.0.2.2 = host loopback
-# Physical device / EC2: use http://<LAN_OR_EC2_IP>:8000/api/
-smarttasker.api.baseUrl=http://10.0.2.2:8000/api/
+# Deployed backend (default):
+smarttasker.api.baseUrl=http://3.144.24.128:8000/api/
