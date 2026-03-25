@@ -27,10 +27,10 @@ def _env_first(*keys: str, default: Optional[str] = None) -> Optional[str]:
     return default
 
 
-# Never commit real secrets. Use SECRET_KEY or DJANGO_SECRET_KEY in .env / the host environment.
+# Secrets: set SECRET_KEY (or DJANGO_SECRET_KEY) in the environment / .env — never commit real values.
 SECRET_KEY = _env_first("SECRET_KEY", "DJANGO_SECRET_KEY", default="dev-only-change-before-production")
 
-# Production: DJANGO_DEBUG=False (see .env.example). Local dev: set DJANGO_DEBUG=True.
+# EC2 / Docker production: DEBUG must be False. For local dev only, set DJANGO_DEBUG=True in .env.
 DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() in ("1", "true", "yes")
 
 # Behind AWS ALB / nginx with TLS termination, trust forwarded headers when DEBUG is False.
@@ -38,12 +38,8 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     USE_X_FORWARDED_HOST = True
 
-# EC2 / Docker: set DJANGO_ALLOWED_HOSTS=* for broad access during demos, or list explicit hosts for production.
-_allowed_raw = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").strip()
-if _allowed_raw == "*":
-    ALLOWED_HOSTS = ["*"]
-else:
-    ALLOWED_HOSTS = [h.strip() for h in _allowed_raw.split(",") if h.strip()]
+# AWS EC2 / Docker: allow all hosts (restrict via security groups + HTTPS in front for real production).
+ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -89,13 +85,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "backend.wsgi.application"
 
-# PostgreSQL only (production / Docker / local). Use DB_* or legacy POSTGRES_* vars.
+# PostgreSQL — configure via DB_* (and POSTGRES_* fallbacks). Matches docker-compose `.env.example`.
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": _env_first("DB_NAME", "POSTGRES_DB", default="smarttasker"),
-        "USER": _env_first("DB_USER", "POSTGRES_USER", default="smarttasker"),
-        "PASSWORD": _env_first("DB_PASSWORD", "POSTGRES_PASSWORD", default="smarttasker"),
+        "NAME": _env_first("DB_NAME", "POSTGRES_DB", default="postgres"),
+        "USER": _env_first("DB_USER", "POSTGRES_USER", default="postgres"),
+        "PASSWORD": _env_first("DB_PASSWORD", "POSTGRES_PASSWORD", default="postgres"),
         "HOST": _env_first("DB_HOST", "POSTGRES_HOST", default="localhost"),
         "PORT": _env_first("DB_PORT", "POSTGRES_PORT", default="5432"),
     }
@@ -114,7 +110,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # In production, serve collected static files via WhiteNoise (admin CSS/JS without nginx).
 if not DEBUG:

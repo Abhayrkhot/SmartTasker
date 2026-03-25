@@ -2,15 +2,15 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-smarttasker}
-      POSTGRES_USER: ${POSTGRES_USER:-smarttasker}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smarttasker}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smarttasker} -d ${POSTGRES_DB:-smarttasker}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -22,22 +22,21 @@ services:
     command: >
       sh -c "python manage.py migrate --noinput &&
              python manage.py collectstatic --noinput &&
-             gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+             gunicorn backend.wsgi:application --bind 0.0.0.0:8000"
     environment:
       # Django settings.py reads SECRET_KEY first, then DJANGO_SECRET_KEY (see _env_first).
       SECRET_KEY: ${SECRET_KEY:-}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-me-in-production}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
-      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
       # Django reads DB_* first; fall back to POSTGRES_* from .env for a single source of truth
-      DB_NAME: ${DB_NAME:-${POSTGRES_DB:-smarttasker}}
-      DB_USER: ${DB_USER:-${POSTGRES_USER:-smarttasker}}
-      DB_PASSWORD: ${DB_PASSWORD:-${POSTGRES_PASSWORD:-smarttasker}}
+      DB_NAME: ${DB_NAME:-${POSTGRES_DB:-postgres}}
+      DB_USER: ${DB_USER:-${POSTGRES_USER:-postgres}}
+      DB_PASSWORD: ${DB_PASSWORD:-${POSTGRES_PASSWORD:-postgres}}
       DB_HOST: db
       DB_PORT: "5432"
-      POSTGRES_DB: ${POSTGRES_DB:-smarttasker}
-      POSTGRES_USER: ${POSTGRES_USER:-smarttasker}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smarttasker}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "${WEB_PORT:-8000}:8000"
     depends_on:

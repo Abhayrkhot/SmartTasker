@@ -23,5 +23,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=50s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/', timeout=5)" || exit 1
 
-# Default CMD overridden by docker-compose (migrate + collectstatic + gunicorn)
-CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+# Default CMD (docker-compose overrides with migrate + collectstatic + gunicorn)
+CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000"]
