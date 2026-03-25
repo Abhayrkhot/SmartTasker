@@ -4,7 +4,7 @@
 
 ---
 
-## Demo flow (what recruiters can try)
+## Demo flow
 
 1. **Register** a user (`POST /api/register/`).
 2. **Login** and receive **access** + **refresh** JWTs (`POST /api/login/`).
