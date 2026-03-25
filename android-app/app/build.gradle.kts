@@ -9,6 +9,7 @@ val localPropsFile = rootProject.file("local.properties")
 if (localPropsFile.exists()) {
     localPropsFile.inputStream().use { localProperties.load(it) }
 }
+// Host must be 10.0.2.2 for emulator → machine localhost; path must include /api/ for API routes.
 var apiBaseUrl = localProperties.getProperty("smarttasker.api.baseUrl", "http://10.0.2.2:8000/api/")
 if (!apiBaseUrl.endsWith("/")) {
     apiBaseUrl = "$apiBaseUrl/"

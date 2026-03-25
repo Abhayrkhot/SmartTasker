@@ -9,12 +9,14 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.smarttasker.app.data.model.UserResponse;
 import com.smarttasker.app.data.repo.AuthRepository;
+import com.smarttasker.app.ui.common.AuthUiState;
 
+/**
+ * Register screen ViewModel: {@link #getRegisterState()} for unified loading/error/success.
+ */
 public class RegisterViewModel extends AndroidViewModel {
     private final AuthRepository authRepository;
-    private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
-    private final MutableLiveData<String> error = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> success = new MutableLiveData<>();
+    private final MutableLiveData<AuthUiState> registerState = new MutableLiveData<>(AuthUiState.idle());
 
     public RegisterViewModel(@NonNull Application application) {
         super(application);
@@ -22,33 +24,22 @@ public class RegisterViewModel extends AndroidViewModel {
     }
 
     public void register(String username, String password, String email) {
-        loading.postValue(true);
-        error.postValue(null);
+        registerState.postValue(AuthUiState.loading());
         String em = email == null ? "" : email.trim();
         authRepository.register(username.trim(), password, em, new AuthRepository.RepoCallback<UserResponse>() {
             @Override
             public void onSuccess(UserResponse data) {
-                loading.postValue(false);
-                success.postValue(true);
+                registerState.postValue(AuthUiState.success());
             }
 
             @Override
             public void onError(String message) {
-                loading.postValue(false);
-                error.postValue(message);
+                registerState.postValue(AuthUiState.error(message));
             }
         });
     }
 
-    public LiveData<Boolean> getLoading() {
-        return loading;
-    }
-
-    public LiveData<String> getError() {
-        return error;
-    }
-
-    public LiveData<Boolean> getSuccess() {
-        return success;
+    public LiveData<AuthUiState> getRegisterState() {
+        return registerState;
     }
 }

@@ -10,7 +10,10 @@ import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
 
-/** Attaches {@code Authorization: Bearer} for protected routes. */
+/**
+ * Attaches {@code Authorization: Bearer &lt;access&gt;} for protected routes.
+ * Skips public endpoints (register, login, token refresh, health).
+ */
 public final class AuthInterceptor implements Interceptor {
     private final TokenManager tokenManager;
 
@@ -23,7 +26,7 @@ public final class AuthInterceptor implements Interceptor {
     public Response intercept(@NonNull Chain chain) throws IOException {
         Request original = chain.request();
         String path = original.url().encodedPath();
-        if (path.endsWith("register/") || path.endsWith("login/")) {
+        if (isPublicPath(path)) {
             return chain.proceed(original);
         }
         String token = tokenManager.getAccessToken();
@@ -33,5 +36,12 @@ public final class AuthInterceptor implements Interceptor {
             return chain.proceed(b.build());
         }
         return chain.proceed(original);
+    }
+
+    private static boolean isPublicPath(String path) {
+        return path.endsWith("register/")
+                || path.endsWith("login/")
+                || path.endsWith("token/refresh/")
+                || path.endsWith("health/");
     }
 }

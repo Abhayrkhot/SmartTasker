@@ -17,7 +17,12 @@ import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
 
+/**
+ * Retrofit contract for SmartTasker API. Base URL must end with {@code /api/}
+ * (e.g. {@code http://10.0.2.2:8000/api/} on the Android emulator).
+ */
 public interface ApiService {
+
     @POST("register/")
     Call<UserResponse> register(@Body RegisterBody body);
 
@@ -25,7 +30,7 @@ public interface ApiService {
     Call<JwtTokens> login(@Body LoginBody body);
 
     @GET("tasks/")
-    Call<List<Task>> listTasks();
+    Call<List<Task>> getTasks();
 
     @POST("tasks/")
     Call<Task> createTask(@Body TaskRequest body);

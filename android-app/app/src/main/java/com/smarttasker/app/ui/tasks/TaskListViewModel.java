@@ -14,6 +14,9 @@ import com.smarttasker.app.data.repo.TaskRepository;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Task list: exposes task list, loading, and error via {@link LiveData} (MVVM).
+ */
 public class TaskListViewModel extends AndroidViewModel {
     private final TaskRepository taskRepository;
     private final MutableLiveData<List<Task>> tasks = new MutableLiveData<>(new ArrayList<>());
@@ -28,7 +31,7 @@ public class TaskListViewModel extends AndroidViewModel {
     public void loadTasks() {
         loading.postValue(true);
         error.postValue(null);
-        taskRepository.listTasks(new TaskRepository.RepoCallback<List<Task>>() {
+        taskRepository.getTasks(new TaskRepository.RepoCallback<List<Task>>() {
             @Override
             public void onSuccess(List<Task> data) {
                 loading.postValue(false);
@@ -75,6 +78,11 @@ public class TaskListViewModel extends AndroidViewModel {
                 loadTasks();
             }
         });
+    }
+
+    /** Task list for {@link androidx.recyclerview.widget.RecyclerView}. */
+    public LiveData<List<Task>> getTaskList() {
+        return tasks;
     }
 
     public LiveData<List<Task>> getTasks() {

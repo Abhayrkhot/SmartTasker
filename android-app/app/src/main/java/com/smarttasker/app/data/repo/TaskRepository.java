@@ -12,6 +12,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+/** Task CRUD; networking only (MVVM repositories call into this). */
 public final class TaskRepository {
     private final Context appContext;
 
@@ -19,8 +20,8 @@ public final class TaskRepository {
         this.appContext = context.getApplicationContext();
     }
 
-    public void listTasks(RepoCallback<List<Task>> cb) {
-        ApiClient.get(appContext).api().listTasks().enqueue(new Callback<List<Task>>() {
+    public void getTasks(RepoCallback<List<Task>> cb) {
+        ApiClient.get(appContext).api().getTasks().enqueue(new Callback<List<Task>>() {
             @Override
             public void onResponse(Call<List<Task>> call, Response<List<Task>> response) {
                 if (response.isSuccessful() && response.body() != null) {

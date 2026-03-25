@@ -1,6 +1,7 @@
 package com.smarttasker.app.ui.auth;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -9,6 +10,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.smarttasker.app.databinding.ActivityRegisterBinding;
+import com.smarttasker.app.ui.common.AuthUiState;
 
 public class RegisterActivity extends AppCompatActivity {
     private ActivityRegisterBinding binding;
@@ -22,17 +24,18 @@ public class RegisterActivity extends AppCompatActivity {
 
         viewModel = new ViewModelProvider(this).get(RegisterViewModel.class);
 
-        viewModel.getLoading().observe(this, loading -> {
-            binding.progress.setVisibility(Boolean.TRUE.equals(loading) ? android.view.View.VISIBLE : android.view.View.GONE);
-            binding.buttonRegister.setEnabled(!Boolean.TRUE.equals(loading));
-        });
-        viewModel.getError().observe(this, msg -> {
-            if (msg != null && !msg.isEmpty()) {
-                Snackbar.make(binding.getRoot(), msg, Snackbar.LENGTH_LONG).show();
+        viewModel.getRegisterState().observe(this, state -> {
+            if (state == null) {
+                return;
             }
-        });
-        viewModel.getSuccess().observe(this, ok -> {
-            if (Boolean.TRUE.equals(ok)) {
+            boolean busy = state.phase == AuthUiState.Phase.LOADING;
+            binding.progress.setVisibility(busy ? View.VISIBLE : View.GONE);
+            binding.buttonRegister.setEnabled(!busy);
+
+            if (state.phase == AuthUiState.Phase.ERROR && state.errorMessage != null && !state.errorMessage.isEmpty()) {
+                Snackbar.make(binding.getRoot(), state.errorMessage, Snackbar.LENGTH_LONG).show();
+            }
+            if (state.phase == AuthUiState.Phase.SUCCESS) {
                 Toast.makeText(this, "Account created. Please log in.", Toast.LENGTH_LONG).show();
                 finish();
             }

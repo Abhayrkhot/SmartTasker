@@ -10,7 +10,10 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-/** Singleton Retrofit client with JWT interceptor. */
+/**
+ * Singleton Retrofit client. Uses {@link BuildConfig#API_BASE_URL} (e.g.
+ * {@code http://10.0.2.2:8000/api/} for the emulator pointing at host port 8000).
+ */
 public final class ApiClient {
     private static volatile ApiClient instance;
     private final ApiService apiService;
@@ -48,7 +51,7 @@ public final class ApiClient {
         return apiService;
     }
 
-    /** Call after logout so a new client picks up cleared tokens (new TokenManager state is same prefs — interceptor reads fresh values each request). */
+    /** Clear singleton after logout so a new client can be created if needed. */
     public static void reset() {
         instance = null;
     }

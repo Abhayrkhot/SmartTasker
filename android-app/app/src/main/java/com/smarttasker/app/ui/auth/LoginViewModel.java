@@ -9,12 +9,14 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.smarttasker.app.data.model.JwtTokens;
 import com.smarttasker.app.data.repo.AuthRepository;
+import com.smarttasker.app.ui.common.AuthUiState;
 
+/**
+ * Login screen ViewModel: {@link #getLoginState()} carries phase (idle/loading/success/error).
+ */
 public class LoginViewModel extends AndroidViewModel {
     private final AuthRepository authRepository;
-    private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
-    private final MutableLiveData<String> error = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> success = new MutableLiveData<>();
+    private final MutableLiveData<AuthUiState> loginState = new MutableLiveData<>(AuthUiState.idle());
 
     public LoginViewModel(@NonNull Application application) {
         super(application);
@@ -22,32 +24,21 @@ public class LoginViewModel extends AndroidViewModel {
     }
 
     public void login(String username, String password) {
-        loading.postValue(true);
-        error.postValue(null);
+        loginState.postValue(AuthUiState.loading());
         authRepository.login(username.trim(), password, new AuthRepository.RepoCallback<JwtTokens>() {
             @Override
             public void onSuccess(JwtTokens data) {
-                loading.postValue(false);
-                success.postValue(true);
+                loginState.postValue(AuthUiState.success());
             }
 
             @Override
             public void onError(String message) {
-                loading.postValue(false);
-                error.postValue(message);
+                loginState.postValue(AuthUiState.error(message));
             }
         });
     }
 
-    public LiveData<Boolean> getLoading() {
-        return loading;
-    }
-
-    public LiveData<String> getError() {
-        return error;
-    }
-
-    public LiveData<Boolean> getSuccess() {
-        return success;
+    public LiveData<AuthUiState> getLoginState() {
+        return loginState;
     }
 }
