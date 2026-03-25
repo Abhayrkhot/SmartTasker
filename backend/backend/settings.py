@@ -26,23 +26,24 @@ def _env_first(*keys: str, default: Optional[str] = None) -> Optional[str]:
             return val
     return default
 
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    "dev-only-change-in-production-use-strong-secret",
-)
 
-DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in ("1", "true", "yes")
+# Never commit real secrets. Use SECRET_KEY or DJANGO_SECRET_KEY in .env / the host environment.
+SECRET_KEY = _env_first("SECRET_KEY", "DJANGO_SECRET_KEY", default="dev-only-change-before-production")
+
+# Production: DJANGO_DEBUG=False (see .env.example). Local dev: set DJANGO_DEBUG=True.
+DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() in ("1", "true", "yes")
 
 # Behind AWS ALB / nginx with TLS termination, trust forwarded headers when DEBUG is False.
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     USE_X_FORWARDED_HOST = True
 
-ALLOWED_HOSTS = [
-    h.strip()
-    for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-    if h.strip()
-]
+# EC2 / Docker: set DJANGO_ALLOWED_HOSTS=* for broad access during demos, or list explicit hosts for production.
+_allowed_raw = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").strip()
+if _allowed_raw == "*":
+    ALLOWED_HOSTS = ["*"]
+else:
+    ALLOWED_HOSTS = [h.strip() for h in _allowed_raw.split(",") if h.strip()]
 
 INSTALLED_APPS = [
     "django.contrib.admin",

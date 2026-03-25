@@ -1,3 +1,5 @@
 # Copy to local.properties (gitignored) and edit for your machine.
-# Physical device on same Wi‑Fi: use your computer's LAN IP (not localhost).
+#
+# Emulator (backend on host): 10.0.2.2 = host loopback
+# Physical device / EC2: use http://<LAN_OR_EC2_IP>:8000/api/
 smarttasker.api.baseUrl=http://10.0.2.2:8000/api/
