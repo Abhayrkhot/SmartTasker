@@ -17,3 +17,6 @@ android-app/.idea/
 
 # OS
 .DS_Store
+
+*.pem
+.idea/
